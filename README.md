@@ -1,0 +1,175 @@
+# Claude Workflow Templates
+
+Reusable [Claude Code](https://docs.anthropic.com/en/docs/claude-code) workflow templates for disciplined feature development and spec review. These templates encode a methodology-driven approach to building software with AI assistance — ensuring every feature goes through planning, testing, implementation, validation, and documentation.
+
+## What's Included
+
+### 5-Stage Feature Development Pipeline
+
+A TDD-based pipeline that enforces quality at every step:
+
+```
+① feature-planner  →  ② spec-test-writer  →  ③ Development  →  ④ post-dev-validator  →  ⑤ spec-updater
+     (agent)               (agent)            (main conversation)      (agent)               (agent)
+```
+
+1. **Plan** — Agent reads specs and produces a structured development plan
+2. **Test First** — Agent writes tests from spec requirements (TDD red phase)
+3. **Develop** — Step-by-step implementation in main conversation with user review
+4. **Validate** — Agent runs tests and reviews code against spec and plan
+5. **Update Docs** — Agent updates spec documents to reflect what was built
+
+### 6-Agent Spec Review System
+
+A multi-agent review pipeline for validating specification documents:
+
+```
+Phase 1: Researcher (sequential)
+Phase 2: Formal Verifier + Coherence Auditor + Systems Engineer + Adversarial Tester (parallel)
+Phase 3: Moderator (sequential synthesis)
+```
+
+| Agent | Role | Model |
+|-------|------|-------|
+| Researcher | External knowledge acquisition & validation | Sonnet |
+| Formal Verifier | Logical completeness & correctness | Opus |
+| Coherence Auditor | Cross-document consistency | Sonnet |
+| Systems Engineer | Engineering feasibility assessment | Sonnet |
+| Adversarial Tester | Edge case & failure scenario discovery | Opus |
+| Moderator | Synthesis & prioritized improvement plan | Opus |
+
+## Quick Start
+
+### Option 1: Interactive Setup (Recommended)
+
+```bash
+git clone https://github.com/your-org/claude-workflow-templates.git
+cd claude-workflow-templates
+chmod +x setup.sh
+./setup.sh
+```
+
+The setup script will:
+1. Ask for your project details (name, tech stack, spec documents)
+2. Copy all template files into your project
+3. Fill in project-specific placeholders automatically
+
+### Option 2: Manual Setup
+
+1. Copy the `template/` directory contents into your project root:
+
+```bash
+cp -r template/.claude /path/to/your-project/
+cp -r template/agents /path/to/your-project/
+```
+
+2. Search for `{{PLACEHOLDER}}` markers in all copied files and replace them:
+
+| Placeholder | Description | Example |
+|-------------|-------------|---------|
+| `{{PROJECT_NAME}}` | Your project name | `MyApp` |
+| `{{PROJECT_DESCRIPTION}}` | One-line description | `A real-time analytics platform` |
+| `{{BACKEND_LANGUAGE}}` | Primary language | `Python 3.11+` |
+| `{{BACKEND_FRAMEWORK}}` | API/web framework | `FastAPI` |
+| `{{DATABASE}}` | Database(s) used | `PostgreSQL + Redis` |
+| `{{TEST_FRAMEWORK}}` | Test framework | `pytest` |
+| `{{TEST_COMMAND}}` | Test run command | `pytest tests/ -v` |
+| `{{TEST_DIRECTORY}}` | Test file location | `tests/` |
+| `{{FRONTEND_FRAMEWORK}}` | Frontend framework | `Next.js` |
+| `{{SPEC_DOCUMENTS}}` | Spec document paths | See below |
+
+3. Customize the `<!-- CUSTOMIZE -->` sections in each file.
+
+## File Structure
+
+```
+your-project/
+├── .claude/
+│   ├── CLAUDE.md                      # Project instructions + pipeline rules
+│   ├── agents/
+│   │   ├── feature-planner.md         # Stage ① Plan
+│   │   ├── spec-test-writer.md        # Stage ② Test First
+│   │   ├── post-dev-validator.md      # Stage ④ Validate
+│   │   └── spec-updater.md            # Stage ⑤ Update Docs
+│   └── skills/
+│       └── spec-review/
+│           └── SKILL.md               # Spec review orchestrator
+└── agents/
+    └── prompts/
+        ├── 01_researcher.md           # External research agent
+        ├── 02_formal_verifier.md      # Formal logic verification
+        ├── 03_coherence_auditor.md    # Cross-doc consistency
+        ├── 04_systems_engineer.md     # Engineering feasibility
+        ├── 05_adversarial_tester.md   # Edge case discovery
+        └── 06_moderator.md            # Final synthesis
+```
+
+## Customization Guide
+
+### Customizing the Pipeline Agents
+
+Each agent template has a **Project Context** section at the top with `<!-- CUSTOMIZE -->` markers. This is where you add project-specific details:
+
+**feature-planner.md** — Add your spec document list so the planner knows what to read.
+
+**spec-test-writer.md** — Add your test framework, test directory, and spec documents.
+
+**post-dev-validator.md** — Add your test command and spec documents.
+
+**spec-updater.md** — Add your spec documents and document-specific update rules.
+
+### Customizing the Spec Review Agents
+
+The 6 spec review agents each have placeholder research topics and checklists:
+
+**01_researcher.md** — Replace the 4 research topics with areas relevant to your project:
+- Topic 1: Your core methodology or formalism
+- Topic 2: Your technology stack specifics
+- Topic 3: Comparable systems in your domain
+- Topic 4: Domain-specific accuracy concerns
+
+**02_formal_verifier.md** — Replace the analysis checklist with your project's formal concerns (data model, formulas, state machines, inference rules).
+
+**03_coherence_auditor.md** — Add your key terms and domain concepts to check for consistency.
+
+**04_systems_engineer.md** — The 7-category checklist is mostly generic, but add project-specific integration concerns.
+
+**05_adversarial_tester.md** — Replace attack vectors with scenarios relevant to your domain and use cases.
+
+**06_moderator.md** — This agent is already generic. Just ensure the report paths match your setup.
+
+## Pipeline Workflow Explained
+
+### Feature Development
+
+When you tell Claude Code to implement a feature:
+
+1. Claude spawns the **feature-planner** agent, which reads your specs and produces a plan in `docs/plans/`
+2. You review and approve the plan
+3. Claude spawns the **spec-test-writer** agent, which writes tests (TDD red phase)
+4. You review the tests
+5. Claude implements the feature step-by-step in the main conversation, running tests after each step
+6. After all steps, Claude spawns the **post-dev-validator** to run the full test suite and review code quality
+7. If validation passes, Claude spawns the **spec-updater** to update documentation
+
+### Spec Review
+
+When you say "Run spec review":
+
+1. The **Researcher** gathers external evidence (papers, documentation, comparable systems)
+2. Four review agents run in parallel: Formal Verifier, Coherence Auditor, Systems Engineer, Adversarial Tester
+3. The **Moderator** synthesizes all findings into a prioritized improvement plan
+4. Output: `agents/reports/final_improvement_plan.md`
+
+## Example: CogEC
+
+The `examples/cogec/` directory contains a reference showing how these templates were customized for the CogEC project (a neuro-symbolic cognitive memory engine). Use it as inspiration for your own customization.
+
+## Requirements
+
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI
+- A project with specification/design documents
+
+## License
+
+MIT
