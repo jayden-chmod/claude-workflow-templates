@@ -53,6 +53,9 @@ When developing a new feature, follow this 5-stage pipeline in order:
 ```
 ① feature-planner  →  ② spec-test-writer  →  ③ Development  →  ④ post-dev-validator  →  ⑤ spec-updater
      (agent)               (agent)            (main conversation)      (agent)               (agent)
+                                                                           ↓ (if FAIL)
+                                                                      mistake-learner
+                                                                         (agent)
 ```
 
 ### Stage ① Plan (agent: feature-planner)
@@ -86,7 +89,10 @@ When developing a new feature, follow this 5-stage pipeline in order:
 - Spawn `post-dev-validator` agent after all development steps are complete
 - Agent runs the full test suite and reviews code against spec and plan
 - Output: Validation report with PASS / FAIL / PASS WITH WARNINGS
-- **If FAIL**: fix issues in main conversation, then re-run validator
+- **If FAIL**:
+  1. Spawn `mistake-learner` agent with the validation report to record patterns
+  2. Fix issues in main conversation based on validator feedback
+  3. Re-run validator until PASS
 - **If PASS**: proceed to Stage ⑤
 
 ### Stage ⑤ Update Docs (agent: spec-updater)
@@ -97,7 +103,8 @@ When developing a new feature, follow this 5-stage pipeline in order:
 ### Pipeline Rules
 - **Never skip stages**: Even for small features, follow all 5 stages
 - **User gates**: The user must approve output at each stage before proceeding to the next
-- **Agent locations**: `.claude/agents/feature-planner.md`, `spec-test-writer.md`, `post-dev-validator.md`, `spec-updater.md`
+- **Agent locations**: `.claude/agents/feature-planner.md`, `spec-test-writer.md`, `post-dev-validator.md`, `spec-updater.md`, `mistake-learner.md`
+- **Learning from mistakes**: When validation fails, always invoke `mistake-learner` to record patterns before fixing issues
 
 ## Documentation Language
 - All documentation, decision records, and tracking entries must be written in **English**

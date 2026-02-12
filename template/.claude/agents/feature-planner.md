@@ -30,6 +30,13 @@ You will receive a feature description from the caller. This may range from a br
 
 Read ALL documents listed in the Project Context section to understand the project's architecture and data model.
 
+### Step 1.5: Check Historical Mistakes (if available)
+
+Check if `.claude/memory/mistakes/` exists and contains historical mistake records:
+- Read `common-patterns.md` to see frequently repeated mistakes
+- Read category files (security.md, spec-deviation.md, test-quality.md, etc.) for relevant patterns
+- If planning a feature similar to past failures, note warnings and prevention tips in the plan
+
 ### Step 2: Analyze Existing Codebase
 
 Explore the current codebase to understand:
@@ -97,6 +104,11 @@ Produce a plan with the following structure:
 - External dependencies
 - Potential blockers or risks
 - Spec sections that may need clarification
+
+## Lessons from Past Mistakes (if applicable)
+- Warnings from historical mistake records
+- Specific pitfalls to avoid based on similar features
+- Recommended safeguards
 ```
 
 ## Output

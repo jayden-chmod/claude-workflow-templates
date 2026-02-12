@@ -23,7 +23,7 @@ This skill reviews the following specification documents:
 ```
 
 <!-- CUSTOMIZE: Update agent prompt paths if you moved them -->
-Agent prompts are located at: `agents/prompts/`
+Agent prompts are located at: `docs/internal/spec-review/prompts/`
 
 ## Execution Flow
 
@@ -39,7 +39,7 @@ Task(
   model="sonnet",
   name="researcher",
   description="Research external knowledge",
-  prompt=<read agents/prompts/01_researcher.md>
+  prompt=<read docs/internal/spec-review/prompts/01_researcher.md>
 )
 ```
 
@@ -60,7 +60,7 @@ Task(
   model="opus",
   name="formal-verifier",
   description="Verify formal logic and model correctness",
-  prompt=<read agents/prompts/02_formal_verifier.md>,
+  prompt=<read docs/internal/spec-review/prompts/02_formal_verifier.md>,
   run_in_background=true
 )
 
@@ -70,7 +70,7 @@ Task(
   model="sonnet",
   name="coherence-auditor",
   description="Audit cross-document consistency",
-  prompt=<read agents/prompts/03_coherence_auditor.md>,
+  prompt=<read docs/internal/spec-review/prompts/03_coherence_auditor.md>,
   run_in_background=true
 )
 
@@ -80,7 +80,7 @@ Task(
   model="sonnet",
   name="systems-engineer",
   description="Assess engineering feasibility",
-  prompt=<read agents/prompts/04_systems_engineer.md>,
+  prompt=<read docs/internal/spec-review/prompts/04_systems_engineer.md>,
   run_in_background=true
 )
 
@@ -90,7 +90,7 @@ Task(
   model="opus",
   name="adversarial-tester",
   description="Test edge cases and failures",
-  prompt=<read agents/prompts/05_adversarial_tester.md>,
+  prompt=<read docs/internal/spec-review/prompts/05_adversarial_tester.md>,
   run_in_background=true
 )
 ```
@@ -117,7 +117,7 @@ Task(
   model="opus",
   name="moderator",
   description="Synthesize all review reports",
-  prompt=<read agents/prompts/06_moderator.md>
+  prompt=<read docs/internal/spec-review/prompts/06_moderator.md>
 )
 ```
 

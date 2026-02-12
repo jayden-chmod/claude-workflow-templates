@@ -197,7 +197,7 @@ Ready to proceed to spec-updater.
 
 - Print the validation report to conversation output so the caller can see the results.
 - If all critical checks pass → report **PASS** and recommend proceeding to `spec-updater`.
-- If any critical check fails → report **FAIL** with clear description of what needs to be fixed. Do NOT recommend proceeding.
+- If any critical check fails → report **FAIL** with clear description of what needs to be fixed. **Recommend invoking `mistake-learner` agent** with this validation report to record patterns before fixing issues.
 
 ## Important Rules
 

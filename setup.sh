@@ -119,7 +119,8 @@ echo -e "${BOLD}Installing templates...${NC}"
 # Create directories
 mkdir -p "${TARGET_DIR}/.claude/agents"
 mkdir -p "${TARGET_DIR}/.claude/skills/spec-review"
-mkdir -p "${TARGET_DIR}/agents/prompts"
+mkdir -p "${TARGET_DIR}/.claude/memory/mistakes"
+mkdir -p "${TARGET_DIR}/docs/internal/spec-review/prompts"
 mkdir -p "${TARGET_DIR}/agents/reports"
 
 # Function to copy and fill template
@@ -167,25 +168,107 @@ fill_template "${TEMPLATE_DIR}/.claude/agents/feature-planner.md"          "${TA
 fill_template "${TEMPLATE_DIR}/.claude/agents/spec-test-writer.md"         "${TARGET_DIR}/.claude/agents/spec-test-writer.md"
 fill_template "${TEMPLATE_DIR}/.claude/agents/post-dev-validator.md"       "${TARGET_DIR}/.claude/agents/post-dev-validator.md"
 fill_template "${TEMPLATE_DIR}/.claude/agents/spec-updater.md"             "${TARGET_DIR}/.claude/agents/spec-updater.md"
+fill_template "${TEMPLATE_DIR}/.claude/agents/mistake-learner.md"          "${TARGET_DIR}/.claude/agents/mistake-learner.md"
 
 # Spec review skill
 fill_template "${TEMPLATE_DIR}/.claude/skills/spec-review/SKILL.md"        "${TARGET_DIR}/.claude/skills/spec-review/SKILL.md"
 
 # Spec review agent prompts
-fill_template "${TEMPLATE_DIR}/docs/internal/spect-review/agents/prompts/01_researcher.md"            "${TARGET_DIR}/agents/prompts/01_researcher.md"
-fill_template "${TEMPLATE_DIR}/docs/internal/spect-review/agents/prompts/02_formal_verifier.md"       "${TARGET_DIR}/agents/prompts/02_formal_verifier.md"
-fill_template "${TEMPLATE_DIR}/docs/internal/spect-review/agents/prompts/03_coherence_auditor.md"     "${TARGET_DIR}/agents/prompts/03_coherence_auditor.md"
-fill_template "${TEMPLATE_DIR}/docs/internal/spect-review/agents/prompts/04_systems_engineer.md"      "${TARGET_DIR}/agents/prompts/04_systems_engineer.md"
-fill_template "${TEMPLATE_DIR}/docs/internal/spect-review/agents/prompts/05_adversarial_tester.md"    "${TARGET_DIR}/agents/prompts/05_adversarial_tester.md"
-fill_template "${TEMPLATE_DIR}/docs/internal/spect-review/agents/prompts/06_moderator.md"             "${TARGET_DIR}/agents/prompts/06_moderator.md"
+fill_template "${TEMPLATE_DIR}/docs/internal/spec-review/prompts/01_researcher.md"            "${TARGET_DIR}/docs/internal/spec-review/prompts/01_researcher.md"
+fill_template "${TEMPLATE_DIR}/docs/internal/spec-review/prompts/02_formal_verifier.md"       "${TARGET_DIR}/docs/internal/spec-review/prompts/02_formal_verifier.md"
+fill_template "${TEMPLATE_DIR}/docs/internal/spec-review/prompts/03_coherence_auditor.md"     "${TARGET_DIR}/docs/internal/spec-review/prompts/03_coherence_auditor.md"
+fill_template "${TEMPLATE_DIR}/docs/internal/spec-review/prompts/04_systems_engineer.md"      "${TARGET_DIR}/docs/internal/spec-review/prompts/04_systems_engineer.md"
+fill_template "${TEMPLATE_DIR}/docs/internal/spec-review/prompts/05_adversarial_tester.md"    "${TARGET_DIR}/docs/internal/spec-review/prompts/05_adversarial_tester.md"
+fill_template "${TEMPLATE_DIR}/docs/internal/spec-review/prompts/06_moderator.md"             "${TARGET_DIR}/docs/internal/spec-review/prompts/06_moderator.md"
+
+# Initialize mistake learning memory files
+initialize_mistake_files() {
+    local mistakes_dir="${TARGET_DIR}/.claude/memory/mistakes"
+
+    # Create category files with headers
+    cat > "${mistakes_dir}/security.md" << 'EOF'
+# Security Mistakes
+
+This file records security-related mistakes discovered during development.
+
+**Last Updated**: $(date +%Y-%m-%d)
+
+---
+EOF
+
+    cat > "${mistakes_dir}/spec-deviation.md" << 'EOF'
+# Spec Deviation Mistakes
+
+This file records mistakes related to spec misinterpretation or non-compliance.
+
+**Last Updated**: $(date +%Y-%m-%d)
+
+---
+EOF
+
+    cat > "${mistakes_dir}/test-quality.md" << 'EOF'
+# Test Quality Mistakes
+
+This file records mistakes related to test rigor and coverage issues.
+
+**Last Updated**: $(date +%Y-%m-%d)
+
+---
+EOF
+
+    cat > "${mistakes_dir}/architecture.md" << 'EOF'
+# Architecture Mistakes
+
+This file records mistakes related to architecture and design pattern violations.
+
+**Last Updated**: $(date +%Y-%m-%d)
+
+---
+EOF
+
+    cat > "${mistakes_dir}/error-handling.md" << 'EOF'
+# Error Handling Mistakes
+
+This file records mistakes related to error handling gaps.
+
+**Last Updated**: $(date +%Y-%m-%d)
+
+---
+EOF
+
+    cat > "${mistakes_dir}/code-style.md" << 'EOF'
+# Code Style Mistakes
+
+This file records mistakes related to style and convention issues.
+
+**Last Updated**: $(date +%Y-%m-%d)
+
+---
+EOF
+
+    cat > "${mistakes_dir}/common-patterns.md" << 'EOF'
+# Common Mistake Patterns
+
+This file records the most frequently repeated mistakes across the project.
+
+**Last Updated**: $(date +%Y-%m-%d)
+
+---
+EOF
+
+    echo -e "  ${GREEN}OK${NC}   .claude/memory/mistakes/ (initialized with category files)"
+}
+
+initialize_mistake_files
 
 echo ""
 echo -e "${GREEN}${BOLD}Done!${NC} Templates installed to ${TARGET_DIR}"
 echo ""
 echo -e "${BOLD}Next steps:${NC}"
 echo "  1. Review .claude/CLAUDE.md and customize any remaining sections"
-echo "  2. Review agent prompts in .claude/agents/ and agents/prompts/"
-echo "  3. Add project-specific research topics to agents/prompts/01_researcher.md"
-echo "  4. Add project-specific formal concerns to agents/prompts/02_formal_verifier.md"
-echo "  5. Start developing with: 'Implement feature X using the pipeline'"
+echo "  2. Review agent prompts in .claude/agents/ and docs/internal/spec-review/prompts/"
+echo "  3. Add project-specific research topics to docs/internal/spec-review/prompts/01_researcher.md"
+echo "  4. Add project-specific formal concerns to docs/internal/spec-review/prompts/02_formal_verifier.md"
+echo "  5. Mistake learning is initialized in .claude/memory/mistakes/"
+echo "  6. Start developing with: 'Implement feature X using the pipeline'"
 echo ""
