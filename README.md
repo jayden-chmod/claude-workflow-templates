@@ -44,25 +44,6 @@ Phase 3: Moderator (sequential synthesis)
 
 ## Quick Start
 
-### For Existing Projects: Migrate to Mistake Learner
-
-If you're already using these templates and want to add the mistake-learner agent:
-
-```bash
-cd claude-workflow-templates
-chmod +x migrate-mistake-learner.sh
-./migrate-mistake-learner.sh
-```
-
-The migration script will:
-1. Add `.claude/agents/mistake-learner.md`
-2. Create `.claude/memory/mistakes/` with 7 category files
-3. Update `CLAUDE.md` pipeline diagram and rules
-4. Update `post-dev-validator.md` to recommend mistake-learner on FAIL
-5. Update `feature-planner.md` to check past mistakes
-6. Create `.backup` files of all modified files
-
-**Recommendation**: Commit your changes before running the migration script.
 
 ### Option 1: Interactive Setup (Recommended for New Projects)
 

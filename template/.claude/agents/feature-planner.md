@@ -50,10 +50,10 @@ Use Glob and Grep to scan the project directories as needed.
 ### Step 3: Map Feature to Spec
 
 Identify which specification documents and sections are relevant to the requested feature:
-- Which data models or abstractions are involved?
-- Which layer of the architecture does this touch?
-- What data stores or external services are affected?
-- Are there any cross-cutting concerns (e.g., affects both frontend and backend)?
+- **Domain Entities**: Which data models or abstractions are involved?
+- **Architecture**: Which layer of the architecture does this touch? (e.g., API, Service, Data, UI)
+- **Data Stores**: What databases, collections, or external services are affected?
+- **Cross-cutting Concerns**: Does this affect security, logging, or performance?
 
 ### Step 4: Generate Development Plan
 

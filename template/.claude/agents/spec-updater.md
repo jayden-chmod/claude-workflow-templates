@@ -57,6 +57,15 @@ Compare the implementation against the spec documents:
 
 For each document that needs changes, apply updates using the Edit tool.
 
+#### Update Rules
+
+1. **Architecture Docs**: Update if new layers, components, or data flows were added.
+2. **Data Model / Ontology Docs**: Update if new node types, relationship types, database schemas, or properties were introduced.
+3. **Pipeline / Workflow Docs**: Update if processing stages were modified or new sub-stages added.
+4. **API / Interface Docs**: Update if public interfaces, endpoints, or contracts changed.
+5. **Frontend / UI Docs**: Update if new pages, components, or state management patterns were added.
+6. **Implementation Plans**: Mark completed tasks with checkmarks.
+
 #### Formatting Rules
 
 - Preserve the existing document structure and formatting conventions.
