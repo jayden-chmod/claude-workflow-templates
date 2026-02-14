@@ -57,20 +57,85 @@ Use Glob and Grep to explore the test directories.
 From the spec documents, extract concrete, testable requirements. Categorize them:
 
 1. **Data Model Tests**: Schema validation, property constraints, relationship rules
+   - e.g., "User must have a valid email address format"
+   - e.g., "Order total must be non-negative"
+
 2. **Logic Tests**: Algorithm correctness, formula verification
+   - e.g., "Discount calculation: total = subtotal * (1 - discount_rate)"
+   - e.g., "Status transition: PENDING -> SHIPPED -> DELIVERED"
+
 3. **Pipeline Tests**: Stage inputs/outputs, ordering, data flow
+   - e.g., "Checkout process order: Cart -> Shipping -> Payment -> Confirmation"
+   - e.g., "Data processing pipeline: Ingest -> Validate -> Transform -> Store"
+
 4. **Integration Tests**: Cross-component interactions
+   - e.g., "API endpoint returns 201 Created on success"
+   - e.g., "Service correctly persists data to the database"
+
 5. **Edge Case Tests**: Boundary conditions, error handling
+   - e.g., "Empty input returns appropriate error"
+   - e.g., "Maximum file size limit enforcement"
+
+### Step 4.5: Map Execution Flow as Decision Tree
+
+Before writing tests, visualize the execution flow as a **decision tree** to identify all test paths systematically.
+
+#### Process
+
+1. **Identify execution stages**: Break the feature into sequential steps (e.g., validation → lookup → computation → persistence)
+2. **Map branches at each stage**: For each step, identify possible branches:
+   - **Input variants**: null / empty / valid / invalid / boundary values
+   - **Preconditions**: exists / missing / partial
+   - **Execution outcomes**: success / failure / timeout
+   - **Side effects**: state changed / unchanged / rollback
+3. **Build the tree**: Start from entry point and branch out at each decision point
+4. **Generate test cases**: Each **root-to-leaf path** becomes a distinct test case
+
+#### Example: User Login Flow
+
+```
+Entry: login(email, password)
+│
+├─ [Stage 1] Input Validation
+│  ├─ email is empty → Error: MissingEmail
+│  ├─ password is empty → Error: MissingPassword
+│  └─ input valid ✓
+│     │
+│     └─ [Stage 2] User Lookup
+│        ├─ user not found → Error: InvalidCredentials
+│        └─ user found ✓
+│           │
+│           └─ [Stage 3] Password Verification
+│              ├─ password mismatch → Error: InvalidCredentials
+│              └─ password matches ✓
+│                 │
+│                 └─ [Stage 4] Session Creation
+│                    ├─ database error → Error: SystemError
+│                    └─ session created ✓ → Success (Return Token)
+```
+
+Each path (e.g., "input valid -> user found -> password mismatch") must be a separate test case.
 
 ### Step 5: Write Test Code
 
-Follow the project's existing test conventions. General principles:
+#### Conventions by Layer
 
-- Test function naming: `test_[what]_[condition]_[expected]`
-- Group related tests in classes or describe blocks
-- Use parameterized tests for spec-defined value ranges
-- Mock external dependencies (databases, APIs, external services)
-- Each test must have a docstring/comment referencing the spec section it validates
+**Backend Tests**
+- Use `pytest` (or project standard)
+- Structure: `tests/unit/` for isolated logic, `tests/integration/` for component interaction
+- Use fixtures for test data and mocks
+- Mock external dependencies (DB, APIs)
+
+**Frontend Tests**
+- Use `Jest`/`Vitest` (or project standard)
+- Test components in isolation (unit) and user flows (integration)
+- Mock API calls and browser APIs
+
+#### Best Practices
+- **Naming**: `test_[function]_[condition]_[expected_result]`
+  - e.g., `test_calculate_total_applies_discount_correctly`
+- **Documentation**: Each test must have a docstring linking to the spec section
+- **Parameterization**: Use parameterized tests for testing multiple input values against the same logic
 
 ### Step 6: Add Spec Traceability
 
@@ -79,7 +144,6 @@ Every test file must include a header comment linking to spec sections:
 ```
 Test module: [module name]
 Spec references:
-  - [Doc Name] § [Section Name]
   - [Doc Name] § [Section Name]
 Plan reference: docs/plans/[feature-name].md § Step N
 ```
@@ -103,17 +167,17 @@ If test directories do not exist, create them.
 ### CRITICAL: Do NOT Make Tests Easy to Pass
 
 **DO NOT weaken requirements to make tests pass more easily:**
-- Do NOT relax assertion conditions
-- Do NOT remove edge cases or boundary tests
-- Do NOT skip tests without legitimate technical reasons (module not yet created is OK; "test is hard" is NOT OK)
-- Do NOT use overly permissive tolerances
-- Do NOT simplify test data to avoid complexity
+- ❌ Do NOT relax assertion conditions
+- ❌ Do NOT remove edge cases or boundary tests
+- ❌ Do NOT skip tests without legitimate technical reasons (module not yet created is OK; "test is hard" is NOT OK)
+- ❌ Do NOT use overly permissive tolerances
+- ❌ Do NOT simplify test data to avoid complexity
 
 **DO write rigorous, spec-accurate tests:**
-- Use exact values from the spec
-- Test all boundary conditions explicitly
-- Use realistic, complex test data that exercises the full spec behavior
-- Assert precise formulas and expected outputs
-- Test error conditions and validation rules
+- ✅ Use exact values from the spec
+- ✅ Test all boundary conditions explicitly
+- ✅ Use realistic, complex test data that exercises the full spec behavior
+- ✅ Assert precise formulas and expected outputs
+- ✅ Test error conditions and validation rules
 
 **Your job is to enforce spec requirements strictly, not to make the developer's life easier.**
