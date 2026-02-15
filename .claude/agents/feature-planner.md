@@ -45,7 +45,15 @@ Explore the current codebase to understand:
 - Which parts of the spec are already implemented
 - Dependencies and infrastructure already set up
 
-Use Glob and Grep to scan the project directories as needed.
+**For file/code exploration, spawn the `codebase-explorer` agent** (uses Haiku for fast, cost-effective search):
+
+```
+Use Task tool with:
+- subagent_type: "codebase-explorer"
+- prompt: "Find files related to [feature/module]" or "Search for [pattern/symbol]"
+```
+
+Only use Glob/Grep directly for simple, single-query searches.
 
 ### Step 3: Map Feature to Spec
 

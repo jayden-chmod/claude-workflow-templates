@@ -49,7 +49,15 @@ Determine what was actually changed:
 
 #### 2-1. Discover Test Files
 
-Find tests related to the implemented feature by scanning the test directories.
+**Spawn `codebase-explorer` agent** (uses Haiku for fast search):
+
+```
+Use Task tool with:
+- subagent_type: "codebase-explorer"
+- prompt: "Find test files related to [feature/module] in [test directory]"
+```
+
+Then match test files to the implemented modules.
 
 #### 2-2. Run Tests
 

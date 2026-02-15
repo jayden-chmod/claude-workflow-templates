@@ -50,7 +50,15 @@ Scan the current codebase to understand:
 - Module structure that tests need to mirror
 - Imports and dependencies available
 
-Use Glob and Grep to explore the test directories.
+**For file/code exploration, spawn the `codebase-explorer` agent** (uses Haiku for fast search):
+
+```
+Use Task tool with:
+- subagent_type: "codebase-explorer"
+- prompt: "Find existing test files and conventions in [test directory]"
+```
+
+Only use Glob/Grep directly for simple, targeted queries.
 
 ### Step 4: Extract Testable Requirements
 
