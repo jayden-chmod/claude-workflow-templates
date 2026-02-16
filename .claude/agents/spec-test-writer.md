@@ -33,6 +33,57 @@ If a plan file is provided, read it first to understand:
 - The implementation steps and their spec alignment
 - The testing strategy section (if present)
 
+### Step 1.5: Plan Gap Analysis
+
+Before reading spec documents, analyze the development plan for gaps that could lead to incomplete or incorrect tests. Check for the following **5 gap categories**:
+
+#### Category 1: Untraceable Spec References
+- Plan references a spec section that doesn't exist or is ambiguous
+- Plan step has no spec reference at all
+- **Check**: For each "Spec alignment" entry in the plan, verify the referenced section exists and describes the expected behavior
+
+#### Category 2: Untestable Implementation Steps
+- Plan step is too vague to derive a test case (e.g., "handle edge cases")
+- Plan step describes infrastructure work with no observable behavior
+- **Check**: Can you write at least one assertion for this step? If not, it's untestable
+
+#### Category 3: Incomplete API Contracts
+- Endpoint defined without request/response schema
+- Missing error response definitions
+- Missing status codes for edge cases
+- **Check**: For each API endpoint, verify all HTTP methods, status codes, and schemas are defined
+
+#### Category 4: Missing Edge Cases
+- Business Logic Decision Tree has unexplored branches
+- Boundary values not considered (empty input, max values, concurrent access)
+- Error recovery paths not defined
+- **Check**: Walk each branch of the decision tree and verify all leaf nodes are reachable
+
+#### Category 5: Ambiguous Behavior
+- Plan uses words like "appropriate", "relevant", "as needed" without specifics
+- Multiple valid interpretations of a requirement
+- **Check**: If two developers could implement this differently and both be "correct", it's ambiguous
+
+#### Feedback Format
+
+If gaps are found, send structured feedback to the feature-planner teammate (in Team Mode) or include in output (in Standalone Mode):
+
+```markdown
+## Plan Gap Analysis Report
+
+### [Category Name]
+- **Location**: Plan § [Section] / Step [N]
+- **Gap**: [Description of what's missing or unclear]
+- **Impact**: [What tests cannot be written because of this gap]
+- **Suggestion**: [Specific fix or clarification needed]
+```
+
+#### Round Tracking
+
+In Team Mode, track feedback rounds:
+- **Round 1–3**: Send feedback and wait for planner response
+- **After Round 3**: If gaps remain unresolved, mark them with `# ASSUMPTION: [your interpretation]` comments in the test code and proceed. The assumption comments serve as flags for the developer and validator.
+
 ### Step 2: Read Relevant Spec Documents
 
 Read the specification documents referenced in the plan. Focus on sections that define:
@@ -189,3 +240,24 @@ If test directories do not exist, create them.
 - ✅ Test error conditions and validation rules
 
 **Your job is to enforce spec requirements strictly, not to make the developer's life easier.**
+
+## Team Mode
+
+This agent can operate in two modes:
+
+### Standalone Mode (default)
+
+When spawned outside of a team, the agent operates exactly as described above: read plan, read specs, write tests, and exit.
+
+### Team Mode (within plan-and-test team)
+
+When spawned as part of the `plan-and-test` team:
+
+1. **Read plan**: When the feature-planner's plan task is marked complete, read the plan file from `docs/plans/[feature-name].md`
+2. **Run Plan Gap Analysis**: Execute Step 1.5 (Plan Gap Analysis) thoroughly
+3. **Send feedback to planner**: If gaps are found, send a structured gap report to the feature-planner teammate via `SendMessage`. Include specific gap categories, locations, and suggestions
+4. **Wait for planner response**: The planner will respond with ACCEPTED/REJECTED for each gap item
+5. **Iterate**: For accepted items, wait for the updated plan, then re-analyze the changed sections. For rejected items, evaluate the planner's reasoning — if convincing, proceed; if not, escalate to team leader
+6. **Write tests**: After the feedback loop completes (gaps resolved or Round 3 reached), proceed with Steps 2–6 to write test code
+7. **Mark task complete**: After writing all test files, mark your test task as completed via `TaskUpdate`
+8. **Assumption markers**: For unresolved gaps after 3 rounds, include `# ASSUMPTION: [interpretation]` comments in test code so the developer and validator are aware of decisions made without full spec clarity

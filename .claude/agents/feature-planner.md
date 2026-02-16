@@ -63,6 +63,55 @@ Identify which specification documents and sections are relevant to the requeste
 - **Data Stores**: What databases, collections, or external services are affected?
 - **Cross-cutting Concerns**: Does this affect security, logging, or performance?
 
+### Step 3.5: Map Business Logic as Decision Tree
+
+Before generating the development plan, visualize the feature's business logic as a **decision tree** to ensure all execution paths are covered.
+
+#### Process
+
+1. **Identify business logic stages**: Break the feature into sequential stages
+   (e.g., input validation → authorization → business rule → persistence → response)
+2. **Map branches at each stage**: For each stage, identify all possible paths:
+   - **Input variants**: valid / invalid / missing / boundary values
+   - **Preconditions**: resource exists / not found / partial state
+   - **Business rules**: condition met / not met / edge case
+   - **Execution outcomes**: success / failure / partial success / timeout
+   - **Side effects**: state changed / unchanged / rollback needed
+3. **Build the tree**: Start from the feature's entry point and branch at each decision
+4. **Derive implementation steps**: Each major branch becomes a plan section.
+   Each leaf node becomes a concrete behavior to implement and test.
+5. **Cross-reference with spec**: Every branch must trace to a spec requirement.
+   Branches without spec backing are flagged as "NEEDS SPEC CLARIFICATION".
+
+#### Example: Order Cancellation
+
+```
+Entry: cancelOrder(orderId, userId)
+│
+├─ [Stage 1] Input Validation
+│  ├─ orderId is empty → Error 400: MissingOrderId
+│  └─ orderId valid ✓
+│     │
+│     └─ [Stage 2] Authorization
+│        ├─ user is not order owner → Error 403: Forbidden
+│        └─ user is owner ✓
+│           │
+│           └─ [Stage 3] Business Rules
+│              ├─ order status is DELIVERED → Error 409: CannotCancel
+│              ├─ order status is SHIPPED → Partial cancel (refund only)
+│              └─ order status is PENDING ✓
+│                 │
+│                 └─ [Stage 4] Execute Cancellation
+│                    ├─ payment refund fails → Error 502 + rollback
+│                    └─ refund success ✓ → Update status + notify
+```
+
+#### Output
+
+Include the decision tree in the plan under a new "## Business Logic Decision Tree" section,
+placed between "## Spec References" and "## Prerequisites".
+Each leaf node should reference the spec section that defines that behavior.
+
 ### Step 4: Generate Development Plan
 
 Produce a plan with the following structure:
@@ -78,6 +127,11 @@ Produce a plan with the following structure:
 ## Spec References
 - List specific sections from spec docs that define this feature's behavior
 - Note any spec ambiguities or gaps that need clarification
+
+## Business Logic Decision Tree
+- Decision tree visualization of all business logic branches
+- Each leaf node references the spec section that defines that behavior
+- Branches without spec backing marked as "NEEDS SPEC CLARIFICATION"
 
 ## Prerequisites
 - Existing code/infrastructure this depends on
@@ -124,6 +178,34 @@ Produce a plan with the following structure:
 Write the development plan to: `docs/plans/[feature-name].md`
 
 If the `docs/plans/` directory does not exist, create it.
+
+## Team Mode
+
+This agent can operate in two modes:
+
+### Standalone Mode (default)
+
+When spawned outside of a team, the agent operates exactly as described above: read specs, analyze codebase, generate plan, and exit.
+
+### Team Mode (within plan-and-test team)
+
+When spawned as part of the `plan-and-test` team:
+
+1. **Initial plan**: Complete the full process (Steps 1–4) and write the plan to `docs/plans/[feature-name].md`
+2. **Mark task complete**: After writing the initial plan, mark your plan task as completed via `TaskUpdate`
+3. **Wait for feedback**: The spec-test-writer teammate will perform a Plan Gap Analysis and may send feedback identifying gaps in the plan
+4. **Evaluate feedback**: When feedback is received via `SendMessage`:
+   - Read each gap report item
+   - Cross-reference against spec documents to determine validity
+   - Categorize each item as: **ACCEPTED** (valid gap, will fix) or **REJECTED** (not a gap, explain why)
+5. **Update plan**: For accepted items:
+   - Update the relevant plan sections
+   - Add missing branches to the Business Logic Decision Tree
+   - Add or modify implementation steps
+   - Update spec references
+6. **Send change summary**: Message the spec-test-writer with a summary of changes made and reasons for any rejected feedback
+7. **Round tracking**: Track the current feedback round (starts at 1). After **3 rounds**, if unresolved gaps remain, escalate to the team leader (user) with a summary of disagreements
+8. **Actionable feedback only**: Only process feedback that is specific, references a spec section or decision tree branch, and proposes a concrete change. Vague feedback (e.g., "plan needs more detail") should be returned for clarification
 
 ## Important Rules
 

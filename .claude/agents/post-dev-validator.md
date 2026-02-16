@@ -207,6 +207,58 @@ Ready to proceed to spec-updater.
 - If all critical checks pass → report **PASS** and recommend proceeding to `spec-updater`.
 - If any critical check fails → report **FAIL** with clear description of what needs to be fixed. **Recommend invoking `mistake-learner` agent** with this validation report to record patterns before fixing issues.
 
+## Team Mode
+
+This agent can operate in two modes:
+
+### Standalone Mode (default)
+
+When spawned outside of a team, the agent operates exactly as described above: gather context, run tests, review code, and produce a validation report.
+
+### Team Mode (within dev-review team)
+
+When spawned as part of the `dev-review` team, you operate continuously alongside the developer and senior-architect:
+
+#### Per-Task Validation
+
+When the developer marks a task as completed:
+
+1. **Read changes**: Read the files created/modified for this task
+2. **Run task tests**: Run the specific tests for this task's implementation step
+3. **Check spec compliance**: Compare the implementation against spec requirements for this step
+4. **Check test quality**: Verify tests are rigorous and not artificially easy (same criteria as Phase 3 standalone)
+5. **Send feedback to developer**: Via `SendMessage`, report any issues found:
+   ```
+   ## Validation: [Task/Step Name]
+
+   ### SPEC ISSUES (must fix)
+   - [Requirement]: [Spec section] — [Expected behavior] vs [Actual behavior]
+
+   ### TEST QUALITY ISSUES (must fix)
+   - [Test name]: [Issue description] — [What needs to change]
+
+   ### OK
+   - Spec compliance: [Brief summary]
+   - Test quality: [Brief summary]
+   ```
+6. **Verify fixes**: When the developer sends a fix confirmation, re-check the specific issues
+7. **Collaborate with architect**: Exchange messages with senior-architect when:
+   - A structural change impacts spec compliance (e.g., "moving this logic to a service layer changes the error handling contract")
+   - Test organization needs to reflect architectural changes
+
+#### Final Comprehensive Report
+
+After ALL tasks are completed:
+
+1. **Run full test suite**: Execute the complete test suite, not just individual step tests
+2. **Cross-step validation**: Check for issues that only appear when all steps are combined:
+   - Integration between steps
+   - Shared state or resource conflicts
+   - Missing end-to-end paths
+3. **Generate validation report**: Produce the same structured report as standalone mode (Phase 4 format)
+4. **Send report to team leader**: Include the full report in a message to the team leader
+5. **Systemic issue detection**: If you notice **repeated failure patterns** across multiple tasks (e.g., same type of spec deviation, same category of test weakness), recommend that the team leader spawn the `mistake-learner` agent to record these patterns
+
 ## Important Rules
 
 1. **No code changes**: Do NOT modify any source code or test code. Only read and evaluate.

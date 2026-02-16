@@ -48,63 +48,107 @@
 
 ## Feature Development Pipeline
 
-When developing a new feature, follow this 5-stage pipeline in order:
+When developing a new feature, follow this 3-stage pipeline in order:
 
 ```
-① feature-planner  →  ② spec-test-writer  →  ③ Development  →  ④ post-dev-validator  →  ⑤ spec-updater
-     (agent)               (agent)            (main conversation)      (agent)               (agent)
-                                                                           ↓ (if FAIL)
-                                                                      mistake-learner
-                                                                         (agent)
+① plan-and-test-team  →  ② dev-review-team  →  ③ spec-updater
+   (agent team)            (agent team)           (agent)
+   - feature-planner       - developer (plan_mode_required)
+   - spec-test-writer      - senior-architect
+                            - post-dev-validator
+                                ↓ (if systemic issues)
+                              mistake-learner (agent)
 ```
 
-### Stage ① Plan (agent: feature-planner)
-- Spawn `feature-planner` agent with the feature description
-- Agent reads spec documents, analyzes codebase, and generates a development plan
-- Output: `docs/plans/[feature-name].md`
-- **User reviews and approves the plan before proceeding**
+### Stage ① Plan + Test (agent team: plan-and-test)
 
-### Stage ② Test First (agent: spec-test-writer)
-- Spawn `spec-test-writer` agent with the approved plan
-- Agent writes test code derived from spec requirements (TDD red phase)
-- Output: test files in the project's test directory
-- **User reviews test code before proceeding**
-- **Critical**: Tests must be rigorous and spec-accurate. Do NOT weaken requirements to make tests easy to pass
+A two-agent team that produces a plan and tests with bidirectional feedback.
 
-### Stage ③ Development (main conversation — NOT a sub-agent)
-- Implementation happens in the main conversation so the user can review each step
-- Follow the development plan step by step
-- Rules:
-  - **One step at a time**: Implement one plan step, then STOP and wait for user confirmation
-  - **Explain before coding**: Before writing code, explain what will be created and why
-  - **Small code units**: Each step should produce a reviewable amount of code (roughly one function or one small module). If a plan step is large, break it into sub-steps
-  - **Comments**: All code must include clear comments explaining intent, not just what the code does
-  - **No auto-pilot**: Do not batch multiple plan steps together. Never proceed to the next step without user approval
-  - **User understanding**: The user wants to fully understand every piece of code. Explain non-obvious patterns or library usage
-  - **Run tests incrementally**: After each step, run relevant tests to show progress (red → green)
-  - **Context reset workflow**: After each step completion, user will `/clear` and resume. On step completion: (1) verify tests pass, (2) update MEMORY.md `Current Step`, (3) announce completion
-  - **Resume protocol**: On resume, read MEMORY.md → check Current Step → read plan → read tests → implement next step
+#### Setup
+1. `TeamCreate("plan-and-test")` — create the team
+2. `TaskCreate` — create two tasks:
+   - **Task: "Write development plan"** — assigned to feature-planner
+   - **Task: "Write spec tests"** — assigned to spec-test-writer, `blockedBy` the plan task
+3. Spawn teammates:
+   - `feature-planner` — reads specs, analyzes codebase, generates plan with Business Logic Decision Tree
+   - `spec-test-writer` — blocked until plan is ready, then performs Plan Gap Analysis
 
-### Stage ④ Validate (agent: post-dev-validator)
-- Spawn `post-dev-validator` agent after all development steps are complete
-- Agent runs the full test suite and reviews code against spec and plan
-- Output: Validation report with PASS / FAIL / PASS WITH WARNINGS
-- **If FAIL**:
-  1. Spawn `mistake-learner` agent with the validation report to record patterns
-  2. Fix issues in main conversation based on validator feedback
-  3. Re-run validator until PASS
-- **If PASS**: proceed to Stage ⑤
+#### Feedback Loop (≤3 rounds)
+1. **Planner** writes initial plan → marks task complete
+2. **Test-writer** unblocks → reads plan → runs Plan Gap Analysis (5 gap categories)
+3. If gaps found → test-writer sends structured feedback to planner
+4. Planner evaluates feedback → updates plan → sends change summary
+5. Test-writer re-analyzes changed sections → repeat if needed (max 3 rounds)
+6. After gaps resolved (or Round 3 reached with `# ASSUMPTION:` markers) → test-writer writes tests → marks task complete
 
-### Stage ⑤ Update Docs (agent: spec-updater)
+#### Output
+- Development plan: `docs/plans/[feature-name].md`
+- Test files in the project's test directory
+
+#### User Gate
+- **User reviews both plan and tests together** before proceeding
+- Approve → `TeamDelete("plan-and-test")` → proceed to Stage ②
+- Reject → provide feedback, team iterates
+
+### Stage ② Dev + Review (agent team: dev-review)
+
+A three-agent team for implementation with real-time architecture review and spec validation.
+
+#### Setup
+1. `TeamCreate("dev-review")` — create the team
+2. `TaskCreate` — create one task per plan implementation step:
+   - **Task: "Step 1: [title]"** — description includes plan step details
+   - **Task: "Step 2: [title]"** — `blockedBy` Step 1
+   - ... (sequential dependencies between steps)
+3. Spawn teammates:
+   - `developer` with `plan_mode_required` — implements code, must get user approval for each step's implementation plan
+   - `senior-architect` — reviews code structure, patterns, and conventions after each step
+   - `post-dev-validator` — checks spec compliance and test quality after each step
+
+#### Per-Step Flow
+```
+developer                  architect              validator
+  |                           |                       |
+  |-- Claim task              |                       |
+  |-- [PLAN MODE]             |                       |
+  |-- Write impl plan         |                       |
+  |-- → User approves plan    |                       |
+  |-- Implement code          |                       |
+  |-- Run tests               |                       |
+  |-- Mark task complete       |                       |
+  |                           |-- Read changes        |-- Read changes
+  |                           |-- Review structure    |-- Run tests
+  |                           |-- SendMessage(dev,    |-- Check spec
+  |                           |   arch feedback)      |-- SendMessage(dev,
+  |                           |                       |   spec feedback)
+  |-- Receive feedback        |                       |
+  |-- Fix issues              |                       |
+  |-- Re-run tests            |                       |
+  |-- Claim next task...      |                       |
+```
+
+#### Final Validation
+After all tasks complete:
+1. **Validator** runs the full test suite and produces a comprehensive validation report
+2. **Validator** sends the report to the team leader (user)
+3. If **systemic issues** (repeated failure patterns across tasks) are detected → validator recommends spawning `mistake-learner` agent
+
+#### User Gate
+- **User reviews the final validation report**
+- If systemic issues → spawn `mistake-learner` agent with the report
+- Approve → shutdown all teammates → `TeamDelete("dev-review")` → proceed to Stage ③
+
+### Stage ③ Update Docs (agent: spec-updater)
 - Spawn `spec-updater` agent with the implementation summary
 - Agent updates spec documents to reflect what was actually built
 - **User reviews doc changes**
 
 ### Pipeline Rules
-- **Never skip stages**: Even for small features, follow all 5 stages
+- **Never skip stages**: Even for small features, follow all 3 stages
 - **User gates**: The user must approve output at each stage before proceeding to the next
-- **Agent locations**: `.claude/agents/feature-planner.md`, `spec-test-writer.md`, `post-dev-validator.md`, `spec-updater.md`, `mistake-learner.md`
-- **Learning from mistakes**: When validation fails, always invoke `mistake-learner` to record patterns before fixing issues
+- **Agent locations**: `.claude/agents/feature-planner.md`, `spec-test-writer.md`, `developer.md`, `senior-architect.md`, `post-dev-validator.md`, `spec-updater.md`, `mistake-learner.md`
+- **Learning from mistakes**: When systemic validation issues are found, invoke `mistake-learner` to record patterns
+- **Team cleanup**: Always `TeamDelete` after each team stage completes
 
 ## Documentation Language
 - All documentation, decision records, and tracking entries must be written in **English**
