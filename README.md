@@ -55,6 +55,15 @@ A three-agent team for implementation with real-time architecture review and spe
 - Always `TeamDelete` after each team stage completes
 - If systemic validation issues found → invoke `mistake-learner` to record patterns
 
+### Session Context Saver
+
+A lightweight agent that captures the current session's working state so the next session can resume exactly where you left off. Invoke it before `/clear` to preserve context across sessions.
+
+- Collects task state, active teams, plan files, and conversation context
+- Saves a structured context file to `.claude/memory/sessions/`
+- Auto-cleans session files older than 30 days
+- Runs on Haiku for speed — completes in under 30 seconds
+
 ### 6-Agent Spec Review System
 
 A multi-agent review pipeline for validating specification documents:
@@ -123,8 +132,10 @@ your-project/
 │   │   ├── post-dev-validator.md      # Spec compliance + validation report
 │   │   # Stage ③ + Learning
 │   │   ├── spec-updater.md            # Updates docs to match implementation
-│   │   └── mistake-learner.md         # Records systemic mistake patterns
+│   │   ├── mistake-learner.md         # Records systemic mistake patterns
+│   │   └── session-context-saver.md   # Saves session state for resumption
 │   ├── memory/
+│   │   ├── sessions/                  # Session context snapshots (auto-cleaned)
 │   │   └── mistakes/                  # Mistake learning knowledge base
 │   │       ├── security.md            # Security-related mistakes
 │   │       ├── spec-deviation.md      # Spec compliance issues
