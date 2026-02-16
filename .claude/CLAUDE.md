@@ -1,5 +1,17 @@
 # {{PROJECT_NAME}} Instructions
 
+> **⚠️ FIRST-TIME SETUP REQUIRED**
+>
+> This is a template file. Before using the Feature Development Pipeline, you must:
+> 1. Replace all `{{PLACEHOLDERS}}` with your actual project information
+> 2. Customize the sections marked with `<!-- CUSTOMIZE: ... -->` comments
+> 3. Update the Tech Stack, Architecture Layers, and Documentation sections
+> 4. Configure MCP servers in `.mcp.json` if needed
+> 5. Adjust agent model assignments based on your project complexity and budget
+> 6. **Delete this entire setup block** once configuration is complete
+>
+> **Ask Claude to help**: You can say "Help me configure CLAUDE.md for my project" to get started.
+
 <!-- CUSTOMIZE: Replace this section with your project overview -->
 ## Project Overview
 {{PROJECT_DESCRIPTION}}
@@ -142,6 +154,15 @@ After all tasks complete:
 - Spawn `spec-updater` agent with the implementation summary
 - Agent updates spec documents to reflect what was actually built
 - **User reviews doc changes**
+
+### Model Configuration
+
+Each agent has a `model` field in its YAML frontmatter. Adjust per project:
+- **opus**: For projects requiring maximum reasoning quality (complex domains, safety-critical)
+- **sonnet**: Default for most agents — good balance of quality and cost
+- **haiku**: For simple tasks (search, documentation updates, record-keeping)
+
+<!-- CUSTOMIZE: Adjust model assignments based on your project's complexity and budget -->
 
 ### Pipeline Rules
 - **Never skip stages**: Even for small features, follow all 3 stages
