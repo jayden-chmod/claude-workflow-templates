@@ -4,24 +4,56 @@ Reusable [Claude Code](https://docs.anthropic.com/en/docs/claude-code) workflow 
 
 ## What's Included
 
-### 5-Stage Feature Development Pipeline
+### 3-Stage Feature Development Pipeline (Agent Teams)
 
-A TDD-based pipeline that enforces quality at every step:
+A TDD-based pipeline using collaborative agent teams for planning, implementation, and validation:
 
 ```
-① feature-planner  →  ② spec-test-writer  →  ③ Development  →  ④ post-dev-validator  →  ⑤ spec-updater
-     (agent)               (agent)            (main conversation)      (agent)               (agent)
-                                                                           ↓ (if FAIL)
-                                                                      mistake-learner
-                                                                         (agent)
+① plan-and-test-team  →  ② dev-review-team  →  ③ spec-updater
+   (agent team)            (agent team)           (agent)
+   - feature-planner       - developer (plan_mode_required)
+   - spec-test-writer      - senior-architect
+                            - post-dev-validator
+                                ↓ (if systemic issues)
+                              mistake-learner (agent)
 ```
 
-1. **Plan** — Agent reads specs and produces a structured development plan (checks past mistakes)
-2. **Test First** — Agent writes tests from spec requirements (TDD red phase)
-3. **Develop** — Step-by-step implementation in main conversation with user review
-4. **Validate** — Agent runs tests and reviews code against spec and plan
-5. **Learn** — If validation fails, agent analyzes and records mistake patterns (builds knowledge base)
-6. **Update Docs** — Agent updates spec documents to reflect what was built
+#### Stage ① Plan + Test (agent team)
+A two-agent team that produces development plan and tests with bidirectional feedback:
+- **feature-planner** reads specs, analyzes codebase, creates plan with Business Logic Decision Tree
+- **spec-test-writer** performs Plan Gap Analysis, provides feedback to planner (≤3 rounds), writes tests
+
+**How to activate:**
+```
+1. TeamCreate("plan-and-test") — create the team
+2. TaskCreate two tasks:
+   - "Write development plan" (assigned to feature-planner)
+   - "Write spec tests" (assigned to spec-test-writer, blocked by plan task)
+3. Spawn teammates using Task tool with team_name parameter
+```
+
+#### Stage ② Dev + Review (agent team)
+A three-agent team for implementation with real-time architecture review and spec validation:
+- **developer** (with plan_mode_required) implements code step-by-step, must get user approval for each step's plan
+- **senior-architect** reviews code structure, patterns, and conventions after each step
+- **post-dev-validator** checks spec compliance and test quality after each step, produces final validation report
+
+**How to activate:**
+```
+1. TeamCreate("dev-review") — create the team
+2. TaskCreate one task per plan implementation step with sequential dependencies
+3. Spawn teammates using Task tool with team_name parameter
+4. Developer claims tasks sequentially, enters plan mode for each step
+```
+
+#### Stage ③ Update Docs (single agent)
+- **spec-updater** agent updates spec documents to reflect what was actually built
+
+**Pipeline Rules:**
+- Never skip stages — even small features follow all 3 stages
+- User must approve output at each stage before proceeding to the next
+- Always `TeamDelete` after each team stage completes
+- If systemic validation issues found → invoke `mistake-learner` to record patterns
 
 ### 6-Agent Spec Review System
 
@@ -80,13 +112,18 @@ Open the agent files in `.claude/agents/` and replace the `{{PLACEHOLDER}}` valu
 ```
 your-project/
 ├── .claude/
-│   ├── CLAUDE.md                      # Project instructions + pipeline rules
+│   ├── CLAUDE.md                      # Project instructions + 3-stage pipeline rules
 │   ├── agents/
-│   │   ├── feature-planner.md         # Stage ① Plan
-│   │   ├── spec-test-writer.md        # Stage ② Test First
-│   │   ├── post-dev-validator.md      # Stage ④ Validate
-│   │   ├── mistake-learner.md         # Stage ⑤ Learn (on validation failure)
-│   │   └── spec-updater.md            # Stage ⑥ Update Docs
+│   │   # Stage ① Plan + Test Team
+│   │   ├── feature-planner.md         # Reads specs, creates plan with Decision Tree
+│   │   ├── spec-test-writer.md        # Gap analysis, feedback loop, writes tests
+│   │   # Stage ② Dev + Review Team
+│   │   ├── developer.md               # Step-by-step implementation (plan_mode_required)
+│   │   ├── senior-architect.md        # Real-time architecture review
+│   │   ├── post-dev-validator.md      # Spec compliance + validation report
+│   │   # Stage ③ + Learning
+│   │   ├── spec-updater.md            # Updates docs to match implementation
+│   │   └── mistake-learner.md         # Records systemic mistake patterns
 │   ├── memory/
 │   │   └── mistakes/                  # Mistake learning knowledge base
 │   │       ├── security.md            # Security-related mistakes
