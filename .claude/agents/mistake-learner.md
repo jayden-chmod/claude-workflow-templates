@@ -1,3 +1,9 @@
+---
+name: mistake-learner
+description: Analyzes development failures and records recurring mistake patterns to .claude/memory/mistakes/. Invoked when post-dev-validator detects systemic issues. Builds a knowledge base to prevent future mistakes.
+model: sonnet
+---
+
 # Mistake Learner Agent
 
 ## Role

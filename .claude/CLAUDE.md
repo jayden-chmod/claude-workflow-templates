@@ -3,14 +3,14 @@
 > **⚠️ FIRST-TIME SETUP REQUIRED**
 >
 > This is a template file. Before using the Feature Development Pipeline, you must:
-> 1. Replace all `{{PLACEHOLDERS}}` with your actual project information
-> 2. Customize the sections marked with `<!-- CUSTOMIZE: ... -->` comments
-> 3. Update the Tech Stack, Architecture Layers, and Documentation sections
+> 1. Edit **`.claude/project-context.md`** — fill in spec document paths, test command, and update rules (agents read this automatically)
+> 2. Fill in `{{PLACEHOLDERS}}` in this file — project name, description, tech stack
+> 3. Customize sections marked with `<!-- CUSTOMIZE: ... -->` comments
 > 4. Configure MCP servers in `.mcp.json` if needed
-> 5. Adjust agent model assignments based on your project complexity and budget
+> 5. Adjust `model:` in agent frontmatter (`.claude/agents/*.md`) if needed — defaults are sonnet/haiku
 > 6. **Delete this entire setup block** once configuration is complete
 >
-> **Ask Claude to help**: You can say "Help me configure CLAUDE.md for my project" to get started.
+> **Ask Claude to help**: You can say "Help me configure this project" to get started.
 
 <!-- CUSTOMIZE: Replace this section with your project overview -->
 ## Project Overview
@@ -23,7 +23,6 @@
 - **Language**: {{BACKEND_LANGUAGE}}
 - **Framework**: {{BACKEND_FRAMEWORK}}
 - **Database**: {{DATABASE}}
-- **Test Framework**: {{TEST_FRAMEWORK}}
 
 ### Frontend
 - **Framework**: {{FRONTEND_FRAMEWORK}}
@@ -36,13 +35,10 @@
 ## Architecture Layers
 <!-- List the layers of your system (e.g., API, Service, Data, etc.) -->
 
-<!-- CUSTOMIZE: List your spec/design documents -->
 ## Documentation
-<!-- Example:
-- `docs/ARCHITECTURE.md` — System architecture overview
-- `docs/specs/DATA_MODEL.md` — Data model specification
-- `docs/specs/API.md` — API specification
--->
+
+<!-- Spec document paths are configured in .claude/project-context.md — edit that file, not here. -->
+<!-- Add high-level notes about documentation conventions here if needed. -->
 
 ## Code Style
 <!-- CUSTOMIZE: Replace with your project's conventions -->
@@ -63,111 +59,146 @@
 When developing a new feature, follow this 3-stage pipeline in order:
 
 ```
-① plan-and-test-team  →  ② dev-review-team  →  ③ spec-updater
-   (agent team)            (agent team)           (agent)
-   - feature-planner       - developer (plan_mode_required)
-   - spec-test-writer      - senior-architect
-                            - post-dev-validator
-                                ↓ (if systemic issues)
-                              mistake-learner (agent)
+Phase A: Decomposition
+  TeamCreate("design-team") → feature-planner + architecture-designer
+  → N chunks finalized → TeamDelete("design-team") → User approve
+
+For each chunk (repeat N times):
+  Phase B: Design
+    TeamCreate("design-team") → architecture-designer + feature-planner + spec-test-writer
+    → architecture + plan + tests → TeamDelete("design-team") → User approve
+
+  Phase C: Implement
+    TeamCreate("dev-review") → developer + senior-architect + post-dev-validator
+    → implement + validate → TeamDelete("dev-review") → User approve
+
+Phase D: Update Docs
+  spec-updater
 ```
 
-### Stage ① Plan + Test (agent team: plan-and-test)
+---
 
-A two-agent team that produces a plan and tests with bidirectional feedback.
+### Phase A: Feature Decomposition
 
-#### Setup
-1. `TeamCreate("plan-and-test")` — create the team
-2. `TaskCreate` — create two tasks:
-   - **Task: "Write development plan"** — assigned to feature-planner
-   - **Task: "Write spec tests"** — assigned to spec-test-writer, `blockedBy` the plan task
-3. Spawn teammates:
-   - `feature-planner` — reads specs, analyzes codebase, generates plan with Business Logic Decision Tree
-   - `spec-test-writer` — blocked until plan is ready, then performs Plan Gap Analysis
+**Team**: `TeamCreate("design-team")` — spawn `feature-planner` + `architecture-designer`
 
-#### Feedback Loop (≤3 rounds)
-1. **Planner** writes initial plan → marks task complete
-2. **Test-writer** unblocks → reads plan → runs Plan Gap Analysis (5 gap categories)
-3. If gaps found → test-writer sends structured feedback to planner
-4. Planner evaluates feedback → updates plan → sends change summary
-5. Test-writer re-analyzes changed sections → repeat if needed (max 3 rounds)
-6. After gaps resolved (or Round 3 reached with `# ASSUMPTION:` markers) → test-writer writes tests → marks task complete
+1. `feature-planner` reads all spec documents
+2. `feature-planner` proposes N domain-based chunks → sends to `architecture-designer` via `SendMessage`
+3. `architecture-designer` reviews chunk boundaries against DDD principles → sends feedback
+4. Iterate until consensus (max 3 rounds)
+5. **If spec gaps are found** → present to user, wait for clarification before proceeding
+6. `feature-planner` saves: `docs/plans/[feature-name]-decomposition.md`
+7. `TeamDelete("design-team")`
+8. Spawn `pipeline-recorder` → records decomposition decisions and constraints to `.claude/memory/pipeline/[feature-name]/decomposition.md`
 
-#### Output
-- Development plan: `docs/plans/[feature-name].md`
-- Test files in the project's test directory
+**User Gate**:
+- User reviews chunk breakdown → Approve to proceed, or reject to revise (re-open team)
 
-#### User Gate
-- **User reviews both plan and tests together** before proceeding
-- Approve → `TeamDelete("plan-and-test")` → proceed to Stage ②
-- Reject → provide feedback, team iterates
+---
 
-### Stage ② Dev + Review (agent team: dev-review)
+### Phase B + C: Per-Chunk Loop
 
-A three-agent team for implementation with real-time architecture review and spec validation.
+Repeat for **each chunk** in execution order. Each chunk creates and dissolves its own teams.
 
-#### Setup
-1. `TeamCreate("dev-review")` — create the team
-2. `TaskCreate` — create one task per plan implementation step:
-   - **Task: "Step 1: [title]"** — description includes plan step details
-   - **Task: "Step 2: [title]"** — `blockedBy` Step 1
-   - ... (sequential dependencies between steps)
-3. Spawn teammates:
-   - `developer` with `plan_mode_required` — implements code, must get user approval for each step's implementation plan
-   - `senior-architect` — reviews code structure, patterns, and conventions after each step
-   - `post-dev-validator` — checks spec compliance and test quality after each step
+#### Phase B: Design (per chunk)
 
-#### Per-Step Flow
+**Team**: `TeamCreate("design-team")` — spawn `architecture-designer` + `feature-planner` + `spec-test-writer`
+
 ```
-developer                  architect              validator
-  |                           |                       |
-  |-- Claim task              |                       |
-  |-- [PLAN MODE]             |                       |
-  |-- Write impl plan         |                       |
-  |-- → User approves plan    |                       |
-  |-- Implement code          |                       |
-  |-- Run tests               |                       |
-  |-- Mark task complete       |                       |
-  |                           |-- Read changes        |-- Read changes
-  |                           |-- Review structure    |-- Run tests
-  |                           |-- SendMessage(dev,    |-- Check spec
-  |                           |   arch feedback)      |-- SendMessage(dev,
-  |                           |                       |   spec feedback)
-  |-- Receive feedback        |                       |
-  |-- Fix issues              |                       |
-  |-- Re-run tests            |                       |
-  |-- Claim next task...      |                       |
+architecture-designer           feature-planner              spec-test-writer
+      |                               |                             |
+      |-- Design DDD architecture     |                             |
+      |   docs/plans/*-architecture   |                             |
+      |-- Notify teammates ---------> |                             |
+      |                               |-- Read architecture         |
+      |                               |-- Write detailed plan       |
+      |                               |   docs/plans/*-plan.md      |
+      |                               |-- Mark task complete        |
+      |                               |                             |-- Read architecture
+      |                               |                             |-- Read plan
+      |                               |                             |-- Plan Gap Analysis
+      |                               |                             |   (gaps → ask user)
+      |                               |                             |-- Write tests
+      |                               |                             |-- Mark task complete
 ```
 
-#### Final Validation
-After all tasks complete:
-1. **Validator** runs the full test suite and produces a comprehensive validation report
-2. **Validator** sends the report to the team leader (user)
-3. If **systemic issues** (repeated failure patterns across tasks) are detected → validator recommends spawning `mistake-learner` agent
+**TaskCreate per chunk:**
+- **"Design architecture: [chunk]"** → architecture-designer
+- **"Write plan: [chunk]"** → feature-planner, `blockedBy` architecture task
+- **"Write tests: [chunk]"** → spec-test-writer, `blockedBy` both above
 
-#### User Gate
-- **User reviews the final validation report**
-- If systemic issues → spawn `mistake-learner` agent with the report
-- Approve → shutdown all teammates → `TeamDelete("dev-review")` → proceed to Stage ③
+**End of Phase B**:
+1. `TeamDelete("design-team")`
+2. Spawn `pipeline-recorder` → records design decisions, trade-offs, and constraints to `.claude/memory/pipeline/[feature-name]/[chunk-name]-design.md`
 
-### Stage ③ Update Docs (agent: spec-updater)
-- Spawn `spec-updater` agent with the implementation summary
+**User Gate (Phase B)**:
+- User reviews architecture + plan + tests together
+- Approve → proceed to Phase C
+- Reject → `TeamCreate("design-team")` again to revise
+
+#### Phase C: Implement (per chunk)
+
+**Team**: `TeamCreate("dev-review")` — spawn `developer` + `senior-architect` + `post-dev-validator`
+
+`TaskCreate` one task per implementation step in the chunk's plan (sequential):
+
+```
+developer                  senior-architect        post-dev-validator
+  |                               |                       |
+  |-- Claim task                  |                       |
+  |-- [PLAN MODE]                 |                       |
+  |-- Propose file tree           |                       |
+  |-- codebase-explorer scan      |                       |
+  |-- SendMessage(senior-arch) -> |                       |
+  |                               |-- Confirm file tree   |
+  |                               |-- SendMessage(dev) -> |
+  |-- Write impl plan             |                       |
+  |-- → User approves plan        |                       |
+  |-- Implement code              |                       |
+  |-- Run tests                   |                       |
+  |-- Mark task complete          |                       |
+  |                               |-- Review vs arch file |-- Read changes
+  |                               |-- SendMessage(dev)    |-- Run tests
+  |                               |                       |-- Check spec
+  |                               |                       |-- SendMessage(dev)
+  |-- Receive feedback            |                       |
+  |-- Fix & re-run tests          |                       |
+  |-- Claim next task...          |                       |
+```
+
+After all steps complete:
+- `post-dev-validator` runs full test suite → produces validation report
+- If systemic issues → recommend spawning `mistake-learner`
+
+**End of Phase C**:
+1. `TeamDelete("dev-review")`
+2. Spawn `pipeline-recorder` → records implementation deviations, lessons, and constraints to `.claude/memory/pipeline/[feature-name]/[chunk-name]-implementation.md`
+
+**User Gate (Phase C)**:
+- User reviews validation report
+- If systemic issues → spawn `mistake-learner` with the report
+- Approve → proceed to **next chunk (Phase B)**
+- Reject → `TeamCreate("dev-review")` again to fix
+
+---
+
+### Phase D: Update Docs (agent: spec-updater)
+- Spawn `spec-updater` with the full implementation summary (all chunks)
 - Agent updates spec documents to reflect what was actually built
 - **User reviews doc changes**
 
 ### Model Configuration
 
-Each agent has a `model` field in its YAML frontmatter. Adjust per project:
-- **opus**: For projects requiring maximum reasoning quality (complex domains, safety-critical)
-- **sonnet**: Default for most agents — good balance of quality and cost
-- **haiku**: For simple tasks (search, documentation updates, record-keeping)
+Each agent has a `model` field in its YAML frontmatter (`.claude/agents/*.md`). Defaults:
+- **sonnet**: `feature-planner`, `architecture-designer`, `developer`, `senior-architect`, `post-dev-validator`, `spec-test-writer`, `mistake-learner`
+- **haiku**: `spec-updater`, `pipeline-recorder`, `session-context-saver`, `codebase-explorer`
 
-<!-- CUSTOMIZE: Adjust model assignments based on your project's complexity and budget -->
+To upgrade specific agents to opus (e.g., for safety-critical domains), edit the `model:` field directly in the agent file.
 
 ### Pipeline Rules
 - **Never skip stages**: Even for small features, follow all 3 stages
 - **User gates**: The user must approve output at each stage before proceeding to the next
-- **Agent locations**: `.claude/agents/feature-planner.md`, `spec-test-writer.md`, `developer.md`, `senior-architect.md`, `post-dev-validator.md`, `spec-updater.md`, `mistake-learner.md`
+- **Agent locations**: `.claude/agents/` — `feature-planner.md`, `architecture-designer.md`, `spec-test-writer.md`, `developer.md`, `senior-architect.md`, `post-dev-validator.md`, `spec-updater.md`, `mistake-learner.md`, `pipeline-recorder.md`
 - **Learning from mistakes**: When systemic validation issues are found, invoke `mistake-learner` to record patterns
 - **Team cleanup**: Always `TeamDelete` after each team stage completes
 

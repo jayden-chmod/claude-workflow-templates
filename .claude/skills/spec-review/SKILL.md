@@ -1,3 +1,10 @@
+---
+name: spec-review
+description: Run a comprehensive 6-agent spec review pipeline (3 phases). Use when the user says "run spec review", "review the specs", or "review my specification documents". Orchestrates researcher → parallel reviewers → moderator.
+disable-model-invocation: true
+allowed-tools: Task, TaskOutput, Read
+---
+
 # Spec Review Skill
 
 ## Description

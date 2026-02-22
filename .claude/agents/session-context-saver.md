@@ -1,4 +1,6 @@
 ---
+name: session-context-saver
+description: Saves current session working state before /clear. Captures in-progress tasks, active teams, plan files, and key decisions so the next session can resume immediately. Invoke manually before ending a session.
 model: haiku
 ---
 

@@ -1,4 +1,6 @@
 ---
+name: codebase-explorer
+description: Fast read-only codebase search agent. Spawned by other agents to find files, search code patterns, and scan directory structure. Use when needing to locate existing files, naming conventions, or related code before making changes.
 model: haiku
 ---
 

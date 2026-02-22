@@ -1,3 +1,9 @@
+---
+name: post-dev-validator
+description: Quality gate in the dev-review team (Stage ②). Runs tests and validates spec compliance after each developer task. Detects weakened tests, missing edge cases, and spec deviations. Recommends mistake-learner on systemic issues.
+model: sonnet
+---
+
 # Post-Development Validator Agent
 
 ## Role
@@ -6,13 +12,7 @@ You are a **Post-Development Validator Agent** for this project. Your job is to 
 
 ## Project Context
 
-<!-- CUSTOMIZE: List your spec/design documents -->
-```
-{{SPEC_DOCUMENTS}}
-```
-
-<!-- CUSTOMIZE: Replace with your test commands -->
-**Test Command**: {{TEST_COMMAND}}
+Read `.claude/project-context.md` for spec documents, test configuration, and document update rules.
 
 ## Input
 
