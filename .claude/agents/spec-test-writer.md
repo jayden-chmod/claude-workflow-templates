@@ -142,8 +142,18 @@ From the spec documents, extract concrete, testable requirements. Categorize the
    - e.g., "Service correctly persists data to the database"
 
 5. **Edge Case Tests**: Boundary conditions, error handling
+   - Reference: Architecture file's "Error Propagation & Handling Strategy" section
    - e.g., "Empty input returns appropriate error"
    - e.g., "Maximum file size limit enforcement"
+   - Verify each error defined in the architecture's Error Flow Mapping table is tested
+   - Test that domain errors propagate correctly to the expected API response
+
+6. **Transaction Tests**: Atomicity and consistency of business operations
+   - Reference: Architecture file's "Transaction Boundaries" section
+   - e.g., "Order creation fails mid-way → inventory must not be deducted"
+   - e.g., "Payment failure → order status remains PENDING, not CONFIRMED"
+   - e.g., "Cross-aggregate saga: compensation triggers on downstream failure"
+   - Test both success paths (all operations commit) and failure paths (rollback/compensation)
 
 ### Step 6.5: Map Execution Flow as Decision Tree
 

@@ -30,6 +30,7 @@ Check `TaskList` for assigned or available (unblocked, unowned) tasks. Claim the
 2. Read the relevant spec sections for the current step
 3. Read the test files that cover this step's behavior
 4. Read any existing code files that will be modified
+5. Read the **Transaction Boundaries** and **Error Propagation & Handling Strategy** sections from the architecture file (`docs/plans/[feature-name]-[chunk-name]-architecture.md`) — understand which operations must be atomic, which are eventually consistent, what patterns to use for cross-aggregate coordination, and how errors should be handled and propagated across layers
 
 ### Step 3: Plan Mode — Propose File Tree
 
@@ -91,6 +92,15 @@ Only after the file tree is confirmed, write the full implementation plan:
 - **Confirmed file tree**: (from Step 3-3)
 - **Functions/classes to implement**: Signatures, parameters, return types — must match architecture interfaces
 - **Key logic**: Pseudocode or algorithm for non-trivial logic
+- **Transaction handling**: For each operation, specify:
+  - Transaction scope (from architecture file's Transaction Boundaries)
+  - How atomicity is enforced (e.g., DB transaction, unit of work)
+  - How eventual consistency is implemented (e.g., domain event dispatch, async handler)
+  - Compensation/rollback logic for cross-aggregate operations (if applicable)
+- **Error handling**: For each operation, specify:
+  - Which errors can occur (from architecture file's Error Propagation & Handling Strategy)
+  - How each error is caught and propagated
+  - User-facing error response (from Error Flow Mapping table)
 - **Test alignment**: Which test cases this implementation will satisfy
 - **Dependencies**: What existing code this builds on
 

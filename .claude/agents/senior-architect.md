@@ -111,6 +111,19 @@ Always compare against the chunk's architecture file: `docs/plans/[feature-name]
 - No circular imports
 - Files placed in correct directories per confirmed file tree
 
+#### 9. Transaction Boundary Compliance
+- Transaction scopes in implementation match those defined in the architecture file's "Transaction Boundaries" section
+- No single transaction spans multiple aggregates (unless explicitly justified and documented in architecture)
+- Eventual consistency patterns match the specified approach (Saga, Events, etc.)
+- Compensation/rollback logic implemented for cross-aggregate coordination scenarios
+
+#### 10. Error Propagation Compliance
+- Domain errors are raised only from the domain layer, not from application or infrastructure
+- Error types match those defined in the architecture file's aggregate/service/use-case `Errors` fields
+- Error propagation across layers follows the Error Flow Mapping table in the architecture file
+- No error swallowing — errors are either handled explicitly or propagated upward
+- Infrastructure error policies (retry, circuit breaker, fallback) match the architecture design
+
 ### Step 3: Send Feedback to Developer
 
 ```

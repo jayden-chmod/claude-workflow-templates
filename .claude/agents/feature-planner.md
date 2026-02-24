@@ -194,6 +194,38 @@ Every leaf node must:
 ## Business Logic Decision Tree
 [Decision tree from Step 2]
 
+## Business Transaction Requirements
+
+### Must Be Atomic (single transaction)
+- **[OperationName]**: [which operations must succeed or fail together]
+  - Business reason: [why atomicity is required — e.g., "Inventory deduction and order creation must be atomic to prevent overselling"]
+  - Involved entities: [aggregates/entities within this chunk]
+
+### Can Be Eventually Consistent
+- **[OperationName]**: [operations that can succeed independently]
+  - Trigger: [what initiates this — e.g., domain event after order is confirmed]
+  - Acceptable delay: [if known — e.g., "Notification within minutes is acceptable"]
+
+### Needs Architectural Decision
+- **[OperationName]**: [operations where the transaction scope is unclear]
+  - Context: [why it's ambiguous]
+  → architecture-designer will determine the appropriate pattern
+
+## Business Error Scenarios
+
+### Domain Errors (business rule violations)
+- **[ErrorName]**: [when this error occurs — e.g., "InsufficientStock when order quantity exceeds available inventory"]
+  - User impact: [what the user sees or what happens — e.g., "Order is rejected, user is notified"]
+  - Expected behavior: [how the system should respond]
+
+### Application Errors (use case failures)
+- **[ErrorName]**: [when this error occurs — e.g., "OrderNotFound when querying a non-existent order"]
+  - Expected behavior: [how the system should respond]
+
+### Infrastructure Concerns
+- [List any known external dependency risks — e.g., "Payment gateway may timeout during peak hours"]
+  → architecture-designer will define the error policy
+
 ## Prerequisites
 [Other chunks that must be complete first]
 
@@ -205,6 +237,8 @@ Every leaf node must:
 - **Key logic**: [pseudocode if complex]
 - **Spec alignment**: [spec § section]
 - **Architecture alignment**: [which domain object / interface from arch design]
+- **Transaction scope**: [which Transaction Boundary from architecture this falls under — or "N/A" if no transactional behavior]
+- **Error handling**: [which errors from architecture's Error Strategy apply to this step — or "N/A"]
 
 ## Testing Strategy
 [Key scenarios — spec-test-writer will use this as reference]
@@ -213,9 +247,32 @@ Every leaf node must:
 [Warnings from .claude/memory/mistakes/]
 ```
 
+### Step 3.5: Send Transaction & Error Requirements to Architecture Designer
+
+After writing the plan, send the `Business Transaction Requirements` and `Business Error Scenarios` sections to `architecture-designer` via `SendMessage`:
+
+```
+## Transaction & Error Requirements Review: [Chunk Name]
+
+### Transaction Requirements
+[Copy the Business Transaction Requirements section from the plan]
+
+### Error Scenarios
+[Copy the Business Error Scenarios section from the plan]
+
+Please evaluate from a DDD perspective:
+- Are the atomic boundaries correct?
+- Should any atomic operations be split (cross-aggregate)?
+- What pattern for "Needs Architectural Decision" items?
+- Are error classifications correct (domain vs application vs infrastructure)?
+- What is the error propagation flow for each error?
+```
+
+Wait for `architecture-designer` to incorporate these into the architecture file's `Transaction Boundaries` and `Error Propagation & Handling Strategy` sections. If there are disagreements, iterate (max 2 rounds) — `architecture-designer` has final authority on technical boundaries.
+
 ### Step 4: Mark Task Complete
 
-After writing the plan, mark your task as completed via `TaskUpdate`.
+After writing the plan and transaction requirements are confirmed, mark your task as completed via `TaskUpdate`.
 
 ---
 
@@ -224,6 +281,7 @@ After writing the plan, mark your task as completed via `TaskUpdate`.
 - You operate within the `design-team` alongside `architecture-designer` and `spec-test-writer`
 - **Phase A**: communicate with `architecture-designer` to reach consensus on chunks
 - **Phase B**: your plan must align with `architecture-designer`'s architecture design — never contradict it
+- **Transaction boundaries**: you propose business transaction requirements, `architecture-designer` evaluates and finalizes them from a DDD perspective
 - If plan and architecture conflict, message `architecture-designer` to resolve before finalizing
 
 ## Important Rules

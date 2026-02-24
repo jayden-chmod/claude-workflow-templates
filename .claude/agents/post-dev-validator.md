@@ -105,10 +105,17 @@ Review the implemented code for:
 - [ ] Separation of concerns maintained
 - [ ] Existing patterns and abstractions reused where appropriate
 
-**Error Handling**
-- [ ] Appropriate error handling at boundaries (API, DB, external calls)
-- [ ] Errors propagated correctly (not silently swallowed)
-- [ ] Meaningful error messages
+**Error Strategy Compliance**
+
+Compare error handling against the architecture design's "Error Propagation & Handling Strategy" section:
+
+- [ ] All errors defined in the architecture file are implemented (no missing error types)
+- [ ] Error propagation follows the Error Flow Mapping table (domain → application → API)
+- [ ] Domain errors are raised from the correct layer (not from application or infrastructure)
+- [ ] API error responses match the defined status codes and error bodies
+- [ ] Infrastructure error policy is followed (retry counts, circuit breakers, fallbacks)
+- [ ] Errors are not silently swallowed — all error paths produce observable outcomes
+- [ ] Error messages are meaningful and do not leak internal details
 
 #### 3-3. Test Quality Check
 
@@ -142,6 +149,17 @@ Compare implemented work against the development plan:
 - [ ] All planned files were created/modified
 - [ ] No unplanned files were added without justification
 - [ ] Test coverage exists for each implementation step
+
+#### 3-5. Transaction Boundary Compliance
+
+Compare transaction handling against the architecture design's "Transaction Boundaries" section:
+
+- [ ] Transactional operations are wrapped in a single transaction (as defined in architecture)
+- [ ] Transaction scope is minimal — no unnecessary locks or overly broad transactions
+- [ ] Non-transactional operations use eventual consistency (events, async) — NOT synchronous transactions
+- [ ] Cross-aggregate operations follow the specified pattern (Saga / Event-driven / Orchestration)
+- [ ] Rollback / compensation logic matches the architecture design
+- [ ] No undocumented transactions — all transaction scopes must be traceable to the architecture file
 
 ---
 

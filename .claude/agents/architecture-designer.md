@@ -31,6 +31,7 @@ Review against DDD principles:
 - **DDD Layer**: Is the classification correct? (Aggregate / Domain Service / Application Service / Infrastructure / API)
 - **Single Responsibility**: Does each chunk have one clear domain purpose?
 - **Dependency Direction**: Do chunk dependencies flow Domain ← Application ← Infrastructure?
+- **Transaction Boundary**: Does the chunk correctly separate transactional vs eventually-consistent operations? Operations across aggregates should NOT be in a single transaction.
 - **Size**: Is the chunk small enough to design, plan, and test independently?
 
 ### Step 2: Send Feedback
@@ -81,12 +82,14 @@ Read the spec sections referenced for this chunk in:
   - Root entity: [EntityName]
   - Invariants: [business rules this aggregate enforces]
   - Properties: [key fields with types]
+  - Errors: [domain errors this aggregate can raise — e.g., InsufficientStock, InvalidOrderState]
 
 ### Domain Services
 - **[ServiceName]**
   - Responsibility: [what domain logic this encapsulates]
   - Input: [parameters with types]
   - Output: [return type or domain events emitted]
+  - Errors: [domain errors this service can raise]
 
 ### Value Objects
 - **[ValueObjectName]**: [what it represents, validation rules]
@@ -101,6 +104,29 @@ Read the spec sections referenced for this chunk in:
   - Input DTO: [fields with types]
   - Output DTO: [fields with types]
   - Orchestration: [which domain objects it coordinates]
+  - Errors: [application-level errors — e.g., EntityNotFound, AuthorizationDenied]
+
+## Transaction Boundaries
+
+_Based on business transaction requirements from `feature-planner` and evaluated against DDD principles._
+
+### Transactional Operations (must succeed or fail atomically)
+- **[OperationName]**
+  - Scope: [which aggregates/entities are involved — must be within a single aggregate boundary]
+  - Business rule: [why atomicity is required — from feature-planner's requirements]
+  - Rollback behavior: [what happens on failure]
+
+### Non-Transactional Operations (eventual consistency)
+- **[OperationName]**
+  - Trigger: [what initiates this — e.g., domain event]
+  - Consistency guarantee: [e.g., "Notification sent within 5 minutes of order placement"]
+  - Failure handling: [retry / compensate / alert]
+
+### Cross-Aggregate Coordination (if applicable)
+- **[ScenarioName]**
+  - Aggregates involved: [list]
+  - Pattern: Saga / Event-driven / Orchestration
+  - Compensation: [rollback steps if downstream operation fails]
 
 ## Infrastructure Layer
 
@@ -119,7 +145,22 @@ Read the spec sections referenced for this chunk in:
 - `[METHOD] /path` — [description]
   - Request body: [schema]
   - Response: [schema]
-  - Error codes: [list with reasons]
+  - Error responses: [status code + error body for each error case]
+
+## Error Propagation & Handling Strategy
+
+### Error Flow Mapping
+
+| Origin Layer | Error | Upstream Handling | API Response |
+|-------------|-------|-------------------|---------------|
+| Domain | [e.g., InsufficientStock] | [Application catches, maps to response] | [e.g., 409 Conflict + message] |
+| Application | [e.g., EntityNotFound] | [Direct API mapping] | [e.g., 404 Not Found] |
+| Infrastructure | [e.g., DBConnectionError] | [Retry / circuit breaker] | [e.g., 503 Service Unavailable] |
+
+### Infrastructure Error Policy
+- **Database failures**: [retry count / circuit breaker / fallback strategy]
+- **External API timeouts**: [retry policy / timeout thresholds / fallback]
+- **Message queue failures**: [dead letter queue / retry / alert]
 
 ## File Structure
 
@@ -159,6 +200,17 @@ This is the contract — implementation must match these exactly.]
 - `other_method(param: Type) -> ReturnType` — [behavior description]
 ```
 
+### Step 2.5: Incorporate Transaction Requirements from Feature Planner
+
+When `feature-planner` sends a **Transaction Requirements Review** via `SendMessage`:
+
+1. **Evaluate** each proposed atomic boundary against DDD principles:
+   - Can the operations stay within a single aggregate? → Transactional
+   - Do they cross aggregate boundaries? → Must use eventual consistency (Saga/Events)
+   - Is the business atomicity requirement in conflict with DDD boundaries? → Design a compensation/Saga pattern
+2. **Respond** with your evaluation and finalize the `Transaction Boundaries` section in the architecture file
+3. **Iterate** up to 2 rounds if disagreements arise — you have final authority on technical transaction boundaries
+
 ### Step 3: Notify Teammates
 
 Send to `feature-planner` and `spec-test-writer` via `SendMessage`:
@@ -171,8 +223,13 @@ Saved: docs/plans/[feature-name]-[chunk-name]-architecture.md
 Key interfaces:
 - [list main entry points with signatures]
 
+Transaction boundaries:
+- Transactional: [list atomic operations]
+- Eventually consistent: [list non-transactional operations]
+- Cross-aggregate: [list patterns if any]
+
 feature-planner: you may now write the detailed implementation plan.
-spec-test-writer: you may now write tests against these interfaces.
+spec-test-writer: you may now write tests against these interfaces and transaction boundaries.
 ```
 
 ---
